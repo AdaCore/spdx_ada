@@ -7,10 +7,11 @@ package SPDX is
    function Parse (Str          : String;
                    Allow_Custom : Boolean := False)
                    return Expression;
-   --  Parse an SPDX expression from string.
+   --  Parse an SPDX (v3.0) expression from string.
    --
    --  If Allow_Custom is True, the parser will accept custom license id with
-   --  the format: "custom-[0-9a-zA-Z.-]+".
+   --  the format "custom-[0-9a-zA-Z.\-+]+", with the exception of the literal
+   --  string "custom-+".
 
    function Valid (This : Expression) return Boolean;
    --  Return True if the SPDX expression is valid
@@ -40,7 +41,8 @@ private
        ' ' | ASCII.HT;
 
    type Token_Kind is (Op_Or_Later, Op_With, Op_Or, Op_And,
-                       Id_Str, Paren_Open, Paren_Close);
+                       Id_Str, Paren_Open, Paren_Close, Colon,
+                       DocumentRef, LicenseRef, AdditionRef);
 
    subtype Operator is Token_Kind range Op_Or_Later .. Op_And;
 
@@ -59,14 +61,20 @@ private
 
    type Error_Kind is (None,
                        Or_Later_Misplaced,
+                       Colon_Misplaced,
                        Invalid_Char,
-                       Operator_Lowcase,
+                       Operator_Mixed_Case,
                        Unexpected_Token,
                        Paren_Close_Expected,
                        License_Id_Expected,
                        Invalid_License_Id,
-                       Exception_Id_Expected,
+                       Addition_Expression_Expected,
+                       Addition_Expression_Misplaced,
                        Invalid_Exception_Id,
+                       DocumentRef_Missing_Colon,
+                       DocumentRef_Missing_LicenseRef,
+                       DocumentRef_Missing_AdditionRef,
+                       Or_Later_In_User_Def_Ref,
                        Empty_Expression);
 
    type Expression (Str_Len : Natural) is record
