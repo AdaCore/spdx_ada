@@ -6,5 +6,5 @@ authors = ["Fabien Chouteau"]
 maintainers = ["Fabien Chouteau <chouteau@adacore.com>"]
 maintainers-logins = ["Fabien-Chouteau"]
 licenses = ["MIT"]
-website="https://github.com/Fabien-Chouteau/spdx_ada"
+website="https://github.com/AdaCore/spdx_ada"
 tags = ['spdx', 'license']
