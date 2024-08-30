@@ -1,3 +1,9 @@
+--
+--  Copyright (C) 2024, AdaCore
+--
+--  SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+--
+
 with Ada.Text_IO; use Ada.Text_IO;
 with Ada.Command_Line;
 with Ada.Exceptions;

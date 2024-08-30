@@ -1,3 +1,9 @@
+--
+--  Copyright (C) 2024, AdaCore
+--
+--  SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+--
+
 with Ada.Strings;
 with Ada.Strings.Fixed;
 with Ada.Characters.Handling; use Ada.Characters.Handling;
