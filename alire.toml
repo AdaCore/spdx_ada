@@ -5,6 +5,6 @@ version = "0.2.0"
 authors = ["Fabien Chouteau"]
 maintainers = ["Fabien Chouteau <chouteau@adacore.com>"]
 maintainers-logins = ["Fabien-Chouteau"]
-licenses = ["Apache-2.0 WITH LLVM-exception"]
+licenses = "Apache-2.0 WITH LLVM-exception"
 website="https://github.com/AdaCore/spdx_ada"
 tags = ['spdx', 'license']
