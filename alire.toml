@@ -12,3 +12,8 @@ tags = ['spdx', 'license']
 [gpr-externals]
 SPDX_LIBRARY_TYPE = ["relocatable", "static", "static-pic"]
 SPDX_BUILD_MODE = ["debug", "optimize"]
+
+[[actions]]
+type = "test"
+directory = "tests"
+command = ["alr", "run"]
