@@ -144,6 +144,10 @@ begin
    Test ("DocumentRef-foo", "No ':' following DocumentRef: 'DocumentRef-foo' (1:15)");
    Test ("DocumentRef-foo:", "No LicenseRef identifier following DocumentRef: 'DocumentRef-foo:' (1:16)");
    Test ("DocumentRef-foo:bar", "No LicenseRef identifier following DocumentRef: 'DocumentRef-foo:bar' (1:19)");
+   Test ("DocumentRef-foo:(LicenseRef-bar)", "No LicenseRef identifier following DocumentRef: 'DocumentRef-foo:(' (1:17)");
+   Test ("DocumentRef-foo :LicenseRef-bar", "No ':' following DocumentRef: 'DocumentRef-foo' (1:15)");
+   Test ("DocumentRef-foo: LicenseRef-bar", "Whitespace following ':': 'DocumentRef-foo: ' (1:17)");
+   Test ("DocumentRef-foo: ", "Whitespace following ':': 'DocumentRef-foo: ' (1:17)");
 
    Test ("AdditionRef-plop", "Addition expression must follow a 'WITH' operator (1:16)");
    Test ("MIT WITH AdditionRef-plop");
@@ -155,8 +159,12 @@ begin
    Test ("MIT WITH DocumentRef-foo", "No ':' following DocumentRef: 'DocumentRef-foo' (10:24)");
    Test ("MIT WITH DocumentRef-foo:", "No AdditionRef identifier following DocumentRef: 'DocumentRef-foo:' (10:25)");
    Test ("MIT WITH DocumentRef-foo:LicenseRef-bar", "No AdditionRef identifier following DocumentRef: 'DocumentRef-foo:LicenseRef-bar' (10:39)");
+   Test ("MIT WITH DocumentRef-foo:(AdditionRef-bar)", "No AdditionRef identifier following DocumentRef: 'DocumentRef-foo:(' (10:26)");
    Test ("MIT WITH DocumentRef:AdditionRef-bar", ": operator must follow a valid DocumentRef (21:21)");
    Test ("MIT WITH DocumentRef-:AdditionRef-bar", ": operator must follow a valid DocumentRef (22:22)");
+   Test ("MIT WITH DocumentRef-foo :AdditionRef-bar", "No ':' following DocumentRef: 'DocumentRef-foo' (10:24)");
+   Test ("MIT WITH DocumentRef-foo: AdditionRef-bar", "Whitespace following ':': 'DocumentRef-foo: ' (10:26)");
+   Test ("MIT WITH DocumentRef-foo: ", "Whitespace following ':': 'DocumentRef-foo: ' (10:26)");
 
    Test ("LicenseRef-plop WITH GPL-3.0-linking-exception");
    Test ("LicenseRef-foo WITH AdditionRef-bar");

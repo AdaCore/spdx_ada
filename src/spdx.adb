@@ -434,6 +434,11 @@ package body SPDX is
               Token_Str (This, This.Err_Loc) &
               "' (" & Img (This.Err_Loc) & ")";
 
+         when DocumentRef_Colon_Whitespace =>
+            return "Whitespace following ':': '" &
+              Token_Str (This, This.Err_Loc) &
+              "' (" & Img (This.Err_Loc) & ")";
+
          when Or_Later_In_User_Def_Ref =>
             return "+ operator in user defined reference: '" &
               Token_Str (This, This.Err_Loc) &
@@ -555,6 +560,15 @@ package body SPDX is
                      if To = Str'Last or else Str (To + 1) /= ':' then
                         This.Error := DocumentRef_Missing_Colon;
                         This.Err_Loc := (From, To);
+                        return;
+                     end if;
+
+                     --  : must be followed by identifier without whitespace
+                     if To + 2 in Str'Range
+                       and then Str (To + 2) in Whitespace_Characters
+                     then
+                        This.Error := DocumentRef_Colon_Whitespace;
+                        This.Err_Loc := (From, To + 2);
                         return;
                      end if;
 

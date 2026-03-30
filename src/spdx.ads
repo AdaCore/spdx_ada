@@ -78,6 +78,7 @@ private
                        Addition_Expression_Misplaced,
                        Invalid_Exception_Id,
                        DocumentRef_Missing_Colon,
+                       DocumentRef_Colon_Whitespace,
                        DocumentRef_Missing_LicenseRef,
                        DocumentRef_Missing_AdditionRef,
                        Or_Later_In_User_Def_Ref,
