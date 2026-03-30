@@ -379,7 +379,7 @@ package body SPDX is
             return "";
 
          when Or_Later_Misplaced =>
-            return "+ operator must follow and indentifier without " &
+            return "+ operator must follow an identifier without " &
               "whitespace (" & Img (This.Err_Loc) & ")";
 
          when Colon_Misplaced =>
@@ -396,7 +396,7 @@ package body SPDX is
             return "Unexpected token at (" & Img (This.Err_Loc) & ")";
 
          when Paren_Close_Expected =>
-            return "Missing closing parentheses ')' at (" &
+            return "Missing closing parenthesis ')' at (" &
               Img (This.Err_Loc) & ")";
 
          when License_Id_Expected =>
@@ -598,7 +598,7 @@ package body SPDX is
 
                   else
                      if Str (To) = '+' then
-                        --  + operator can be found after and id (without
+                        --  + operator can be found after an id (without
                         --  whitespace).
                         Tokens.Append ((Id_Str, (From, To - 1)));
                         Tokens.Append ((Op_Or_Later, (To, To)));

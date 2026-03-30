@@ -98,17 +98,17 @@ begin
    Test ("((MIT) AND (MIT+))");
    Test ("((MIT) AND (MIT+ OR MIT AND MIT AND (MIT WITH GPL-3.0-linking-exception AND MIT)))");
 
-   Test ("MIT +", "+ operator must follow and indentifier without whitespace (5:5)");
-   Test ("MIT AND +", "+ operator must follow and indentifier without whitespace (9:9)");
+   Test ("MIT +", "+ operator must follow an identifier without whitespace (5:5)");
+   Test ("MIT AND +", "+ operator must follow an identifier without whitespace (9:9)");
    Test ("MIT+AND", "Invalid license ID: 'MIT+AND' (1:7)");
 
    Test ("MIT AND", "Empty license expression at (7:7)");
    Test ("MIT OR", "Empty license expression at (6:6)");
    Test ("MIT MIT", "Unexpected token at (5:7)");
 
-   Test ("(MIT", "Missing closing parentheses ')' at (4:4)");
+   Test ("(MIT", "Missing closing parenthesis ')' at (4:4)");
    Test ("MIT)", "Unexpected token at (4:4)");
-   Test ("(MIT AND (MIT OR MIT)", "Missing closing parentheses ')' at (21:21)");
+   Test ("(MIT AND (MIT OR MIT)", "Missing closing parenthesis ')' at (21:21)");
    Test ("MIT AND (MIT OR MIT))", "Unexpected token at (21:21)");
 
    Test ("custom-plop", "Invalid license ID: 'custom-plop' (1:11)", Allow_Custom => False);
