@@ -20,7 +20,11 @@ package body SPDX is
    function Is_Custom_Id (Str : String) return Boolean;
    procedure Parse_License (This : in out Expression);
    procedure Parse_Compound_Expression (This : in out Expression);
-   procedure Parse_Simple_Expression (This : in out Expression);
+   procedure Parse_Simple_Expression (This : in out Expression)
+   with
+     Pre =>
+       This.Tokens.First_Element.Kind
+       in Id_Str | DocumentRef | LicenseRef | AdditionRef;
    procedure Parse_Addition_Expression (This : in out Expression);
 
    ---------------
@@ -265,9 +269,6 @@ package body SPDX is
    -------------------------------
 
    procedure Parse_Addition_Expression (This : in out Expression) is
-      From : constant Natural := This.Tokens.First_Element.Loc.From;
-      First_Token_As_Str : constant String :=
-         Token_Str (This, This.Tokens.First_Element.Loc);
    begin
       --  addition =    license-exception-id
       --              | addition-ref
@@ -278,44 +279,50 @@ package body SPDX is
          return;
       end if;
 
-      if This.Tokens.First_Element.Kind = Id_Str then
-         if not SPDX.Exceptions.Valid_Id (First_Token_As_Str) then
-            This.Error := Invalid_Exception_Id;
-            This.Err_Loc := This.Tokens.First_Element.Loc;
-         end if;
+      declare
+         From : constant Natural := This.Tokens.First_Element.Loc.From;
+         First_Token_As_Str : constant String :=
+            Token_Str (This, This.Tokens.First_Element.Loc);
+      begin
+         if This.Tokens.First_Element.Kind = Id_Str then
+            if not SPDX.Exceptions.Valid_Id (First_Token_As_Str) then
+               This.Error := Invalid_Exception_Id;
+               This.Err_Loc := This.Tokens.First_Element.Loc;
+            end if;
 
-         This.Tokens.Delete_First;
+            This.Tokens.Delete_First;
 
-      elsif This.Tokens.First_Element.Kind = DocumentRef then
-         --  Must have the form "DocumentRef-*:AdditionRef-*"
-         This.Tokens.Delete_First;
-         if This.Tokens.Is_Empty then
-            This.Error := DocumentRef_Missing_AdditionRef;
-            This.Err_Loc := (From, This.Str'Last);
-         elsif This.Tokens.First_Element.Kind /= Colon then
-            This.Error := DocumentRef_Missing_AdditionRef;
-            This.Err_Loc := (From, This.Tokens.First_Element.Loc.From);
-         else
+         elsif This.Tokens.First_Element.Kind = DocumentRef then
+            --  Must have the form "DocumentRef-*:AdditionRef-*"
             This.Tokens.Delete_First;
             if This.Tokens.Is_Empty then
                This.Error := DocumentRef_Missing_AdditionRef;
                This.Err_Loc := (From, This.Str'Last);
-            elsif This.Tokens.First_Element.Kind /= AdditionRef then
+            elsif This.Tokens.First_Element.Kind /= Colon then
                This.Error := DocumentRef_Missing_AdditionRef;
-               This.Err_Loc := (From, This.Tokens.First_Element.Loc.To);
+               This.Err_Loc := (From, This.Tokens.First_Element.Loc.From);
+            else
+               This.Tokens.Delete_First;
+               if This.Tokens.Is_Empty then
+                  This.Error := DocumentRef_Missing_AdditionRef;
+                  This.Err_Loc := (From, This.Str'Last);
+               elsif This.Tokens.First_Element.Kind /= AdditionRef then
+                  This.Error := DocumentRef_Missing_AdditionRef;
+                  This.Err_Loc := (From, This.Tokens.First_Element.Loc.To);
+               end if;
             end if;
+
+            This.Tokens.Delete_First;
+
+         elsif This.Tokens.First_Element.Kind = AdditionRef then
+            This.Tokens.Delete_First;
+
+         else
+            This.Error := Addition_Expression_Expected;
+            This.Err_Loc := This.Tokens.First_Element.Loc;
+            return;
          end if;
-
-         This.Tokens.Delete_First;
-
-      elsif This.Tokens.First_Element.Kind = AdditionRef then
-         This.Tokens.Delete_First;
-
-      else
-         This.Error := Addition_Expression_Expected;
-         This.Err_Loc := This.Tokens.First_Element.Loc;
-         return;
-      end if;
+      end;
    end Parse_Addition_Expression;
 
    -----------
