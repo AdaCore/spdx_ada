@@ -16,8 +16,12 @@ package body SPDX is
    function Token_Str (This : Expression; Loc : Location) return String;
 
    function Contains_Plus (Str : String) return Boolean;
+
    function Has_Prefix (Str : String; Prefix : String) return Boolean;
+   --  NB: requires a strict prefix, i.e. returns False when Str = Prefix
+
    function Is_Custom_Id (Str : String) return Boolean;
+
    procedure Parse_License (This : in out Expression);
    procedure Parse_Compound_Expression (This : in out Expression);
    procedure Parse_Simple_Expression (This : in out Expression)
@@ -206,6 +210,7 @@ package body SPDX is
       --           | license-ref
 
       if This.Tokens.Is_Empty then
+         --  Defensive (prevented by precondition)
          This.Error := License_Id_Expected;
          This.Err_Loc := (This.Str'Last, This.Str'Last);
          return;
@@ -232,9 +237,11 @@ package body SPDX is
          --  Must have the form "DocumentRef-*:LicenseRef-*"
          This.Tokens.Delete_First;
          if This.Tokens.Is_Empty then
+            --  Defensive (presence of colon is enforced by `Tokenize`)
             This.Error := DocumentRef_Missing_LicenseRef;
             This.Err_Loc := (From, This.Str'Last);
          elsif This.Tokens.First_Element.Kind /= Colon then
+            --  Defensive (presence of colon is enforced by `Tokenize`)
             This.Error := DocumentRef_Missing_LicenseRef;
             This.Err_Loc := (From, This.Tokens.First_Element.Loc.From);
          else
@@ -258,6 +265,7 @@ package body SPDX is
          This.Err_Loc := This.Tokens.First_Element.Loc;
 
       else
+         --  Defensive (prevented by precondition)
          This.Error := License_Id_Expected;
          This.Err_Loc := This.Tokens.First_Element.Loc;
       end if;
@@ -296,9 +304,11 @@ package body SPDX is
             --  Must have the form "DocumentRef-*:AdditionRef-*"
             This.Tokens.Delete_First;
             if This.Tokens.Is_Empty then
+               --  Defensive (presence of colon is enforced by `Tokenize`)
                This.Error := DocumentRef_Missing_AdditionRef;
                This.Err_Loc := (From, This.Str'Last);
             elsif This.Tokens.First_Element.Kind /= Colon then
+               --  Defensive (presence of colon is enforced by `Tokenize`)
                This.Error := DocumentRef_Missing_AdditionRef;
                This.Err_Loc := (From, This.Tokens.First_Element.Loc.From);
             else
@@ -546,10 +556,7 @@ package body SPDX is
                      This.Error := Operator_Mixed_Case;
                      This.Err_Loc := (From, To);
                      return;
-
-                  elsif Has_Prefix (Substr, DocRef_Prefix)
-                    and then Substr'Length > DocRef_Prefix'Length -- needs an id
-                  then
+                  elsif Has_Prefix (Substr, DocRef_Prefix) then
                      if Contains_Plus (Substr) then
                         This.Error := Or_Later_In_User_Def_Ref;
                         This.Err_Loc := (From, To);
@@ -576,9 +583,7 @@ package body SPDX is
                      Tokens.Append ((Colon, (To + 1, To + 1)));
                      Index := Index + 1;
 
-                  elsif Has_Prefix (Substr, LicRef_Prefix)
-                    and then Substr'Length > LicRef_Prefix'Length
-                  then
+                  elsif Has_Prefix (Substr, LicRef_Prefix) then
                      if Contains_Plus (Substr) then
                         This.Error := Or_Later_In_User_Def_Ref;
                         This.Err_Loc := (From, To);
@@ -586,9 +591,7 @@ package body SPDX is
                      end if;
                      Tokens.Append ((LicenseRef, (From, To)));
 
-                  elsif Has_Prefix (Substr, AddRef_Prefix)
-                    and then Substr'Length > AddRef_Prefix'Length
-                  then
+                  elsif Has_Prefix (Substr, AddRef_Prefix) then
                      if Contains_Plus (Substr) then
                         This.Error := Or_Later_In_User_Def_Ref;
                         This.Err_Loc := (From, To);

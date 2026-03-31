@@ -105,11 +105,16 @@ begin
    Test ("MIT AND", "Empty license expression at (7:7)");
    Test ("MIT OR", "Empty license expression at (6:6)");
    Test ("MIT MIT", "Unexpected token at (5:7)");
+   Test ("AND MIT", "Unexpected token at (1:3)");
 
    Test ("(MIT", "Missing closing parenthesis ')' at (4:4)");
    Test ("MIT)", "Unexpected token at (4:4)");
    Test ("(MIT AND (MIT OR MIT)", "Missing closing parenthesis ')' at (21:21)");
    Test ("MIT AND (MIT OR MIT))", "Unexpected token at (21:21)");
+   Test ("()", "Unexpected token at (2:2)");
+   Test ("(and)", "Unexpected token at (2:4)");
+   Test ("MIT AND (OR MIT)", "Unexpected token at (10:11)");
+   Test ("(MIT MIT)", "Missing closing parenthesis ')' at (6:8)");
 
    Test ("custom-plop", "Invalid license ID: 'custom-plop' (1:11)", Allow_Custom => False);
    Test ("custom", "Invalid license ID: 'custom' (1:6)", Allow_Custom => True);
@@ -148,6 +153,7 @@ begin
    Test ("DocumentRef-foo :LicenseRef-bar", "No ':' following DocumentRef: 'DocumentRef-foo' (1:15)");
    Test ("DocumentRef-foo: LicenseRef-bar", "Whitespace following ':': 'DocumentRef-foo: ' (1:17)");
    Test ("DocumentRef-foo: ", "Whitespace following ':': 'DocumentRef-foo: ' (1:17)");
+   Test ("DocumentRef-+", "+ operator in user defined reference: 'DocumentRef-+' (1:13)");
 
    Test ("AdditionRef-plop", "Addition expression must follow a 'WITH' operator (1:16)");
    Test ("MIT WITH AdditionRef-plop");
@@ -165,6 +171,7 @@ begin
    Test ("MIT WITH DocumentRef-foo :AdditionRef-bar", "No ':' following DocumentRef: 'DocumentRef-foo' (10:24)");
    Test ("MIT WITH DocumentRef-foo: AdditionRef-bar", "Whitespace following ':': 'DocumentRef-foo: ' (10:26)");
    Test ("MIT WITH DocumentRef-foo: ", "Whitespace following ':': 'DocumentRef-foo: ' (10:26)");
+   Test ("MIT WITH DocumentRef-foo:AdditionRef-bar+", "+ operator in user defined reference: 'AdditionRef-bar+' (26:41)");
 
    Test ("LicenseRef-plop WITH GPL-3.0-linking-exception");
    Test ("LicenseRef-foo WITH AdditionRef-bar");
