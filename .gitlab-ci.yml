@@ -1,0 +1,71 @@
+test:
+  stage: test
+  services:
+    - image:pe-base
+    - cpu:1
+  rules:
+    - if: >
+        ($CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH)
+        || $CI_PIPELINE_SOURCE == "merge_request_event"
+  script:
+    # Install toolchain
+    - generic_anod_ci
+    - source /tmp/ci_env.sh
+    - |
+      for spec in alire gnat gnatcov; do
+        anod install $spec --latest
+        eval `anod printenv $spec`
+      done
+    - |
+      for tool in alr gnat gprbuild gnatcov; do
+        $tool --version
+      done
+    # Disable interactive toolchain confirmation prompt
+    - alr toolchain --disable-assistant
+    # Don't look for an indexed `gnat_external` when calculating build hashes
+    # (see https://github.com/alire-project/alire/pull/2099)
+    - alr settings --global --builtin --set dependencies.shared false
+
+    # Build tests with coverage
+    - cd tests
+    - export GPR_PROJECT_PATH="$GPR_PROJECT_PATH:$CI_PROJECT_DIR/gnatcov-rts/share/gpr"
+    - mkdir -p $CI_PROJECT_DIR/coverage/traces
+    - >
+      gnatcov setup
+      --prefix=$CI_PROJECT_DIR/gnatcov-rts
+      --dump-filename-prefix=$CI_PROJECT_DIR/coverage/traces/
+    - alr gnatcov instrument --level=stmt+uc_mcdc --projects=spdx
+    - alr build -- --src-subdirs=gnatcov-instr --implicit-with=gnatcov_rts.gpr
+
+    # Run the tests
+    - alr run --skip-build || FAILED=true
+
+    # Generate coverage reports, and log summary statistics
+    - printf '%s\n' $CI_PROJECT_DIR/obj/*.sid > $CI_PROJECT_DIR/coverage/sids.txt
+    - printf '%s\n' $CI_PROJECT_DIR/coverage/traces/*.srctrace > $CI_PROJECT_DIR/coverage/traces.txt
+    - |
+      for fmt in xml html cobertura; do
+        alr gnatcov coverage \
+          --source-root=$CI_PROJECT_DIR \
+          --output-dir=$CI_PROJECT_DIR/coverage/$fmt \
+          --annotate=$fmt \
+          --level=stmt+uc_mcdc \
+          --trace @$CI_PROJECT_DIR/coverage/traces.txt \
+          --sid @$CI_PROJECT_DIR/coverage/sids.txt
+      done
+    - echo_coverage_stats --coverage-file $CI_PROJECT_DIR/coverage/xml/index.xml
+
+    # Report and exit non-zero on failure
+    - if [ -n "$FAILED" ]; then echo "Tests failed" && exit 1; fi
+
+  coverage: '/^Stmt Coverage:\s+(\d+\.\d+\%) \(\d+ \/ \d+\)$/'
+  artifacts:
+    when: always
+    paths:
+      - coverage/xml
+      - coverage/html
+      - coverage/cobertura
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage/cobertura/cobertura.xml

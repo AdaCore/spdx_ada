@@ -1,0 +1,19 @@
+name = "spdx_tests"
+description = "Tests for the spdx library"
+version = "0.0.0-test"
+
+project-files = ["tests.gpr"]
+executables = ["main"]
+
+[[depends-on]]
+spdx = "*"
+
+[[pins]]
+spdx = { path = ".." }
+
+[gpr-set-externals]
+SPDX_COMPILE_CHECKS = "enabled"
+SPDX_RUNTIME_CHECKS = "enabled"
+SPDX_STYLE_CHECKS = "enabled"
+SPDX_CONTRACTS = "enabled"
+SPDX_BUILD_MODE = "debug"
