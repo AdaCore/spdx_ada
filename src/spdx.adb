@@ -16,11 +16,19 @@ package body SPDX is
    function Token_Str (This : Expression; Loc : Location) return String;
 
    function Contains_Plus (Str : String) return Boolean;
+
    function Has_Prefix (Str : String; Prefix : String) return Boolean;
+   --  NB: requires a strict prefix, i.e. returns False when Str = Prefix
+
    function Is_Custom_Id (Str : String) return Boolean;
+
    procedure Parse_License (This : in out Expression);
    procedure Parse_Compound_Expression (This : in out Expression);
-   procedure Parse_Simple_Expression (This : in out Expression);
+   procedure Parse_Simple_Expression (This : in out Expression)
+   with
+     Pre =>
+       This.Tokens.First_Element.Kind
+       in Id_Str | DocumentRef | LicenseRef | AdditionRef;
    procedure Parse_Addition_Expression (This : in out Expression);
 
    ---------------
@@ -202,6 +210,7 @@ package body SPDX is
       --           | license-ref
 
       if This.Tokens.Is_Empty then
+         --  Defensive (prevented by precondition)
          This.Error := License_Id_Expected;
          This.Err_Loc := (This.Str'Last, This.Str'Last);
          return;
@@ -228,9 +237,11 @@ package body SPDX is
          --  Must have the form "DocumentRef-*:LicenseRef-*"
          This.Tokens.Delete_First;
          if This.Tokens.Is_Empty then
+            --  Defensive (presence of colon is enforced by `Tokenize`)
             This.Error := DocumentRef_Missing_LicenseRef;
             This.Err_Loc := (From, This.Str'Last);
          elsif This.Tokens.First_Element.Kind /= Colon then
+            --  Defensive (presence of colon is enforced by `Tokenize`)
             This.Error := DocumentRef_Missing_LicenseRef;
             This.Err_Loc := (From, This.Tokens.First_Element.Loc.From);
          else
@@ -254,6 +265,7 @@ package body SPDX is
          This.Err_Loc := This.Tokens.First_Element.Loc;
 
       else
+         --  Defensive (prevented by precondition)
          This.Error := License_Id_Expected;
          This.Err_Loc := This.Tokens.First_Element.Loc;
       end if;
@@ -265,9 +277,6 @@ package body SPDX is
    -------------------------------
 
    procedure Parse_Addition_Expression (This : in out Expression) is
-      From : constant Natural := This.Tokens.First_Element.Loc.From;
-      First_Token_As_Str : constant String :=
-         Token_Str (This, This.Tokens.First_Element.Loc);
    begin
       --  addition =    license-exception-id
       --              | addition-ref
@@ -278,44 +287,52 @@ package body SPDX is
          return;
       end if;
 
-      if This.Tokens.First_Element.Kind = Id_Str then
-         if not SPDX.Exceptions.Valid_Id (First_Token_As_Str) then
-            This.Error := Invalid_Exception_Id;
-            This.Err_Loc := This.Tokens.First_Element.Loc;
-         end if;
+      declare
+         From : constant Natural := This.Tokens.First_Element.Loc.From;
+         First_Token_As_Str : constant String :=
+            Token_Str (This, This.Tokens.First_Element.Loc);
+      begin
+         if This.Tokens.First_Element.Kind = Id_Str then
+            if not SPDX.Exceptions.Valid_Id (First_Token_As_Str) then
+               This.Error := Invalid_Exception_Id;
+               This.Err_Loc := This.Tokens.First_Element.Loc;
+            end if;
 
-         This.Tokens.Delete_First;
+            This.Tokens.Delete_First;
 
-      elsif This.Tokens.First_Element.Kind = DocumentRef then
-         --  Must have the form "DocumentRef-*:AdditionRef-*"
-         This.Tokens.Delete_First;
-         if This.Tokens.Is_Empty then
-            This.Error := DocumentRef_Missing_AdditionRef;
-            This.Err_Loc := (From, This.Str'Last);
-         elsif This.Tokens.First_Element.Kind /= Colon then
-            This.Error := DocumentRef_Missing_AdditionRef;
-            This.Err_Loc := (From, This.Tokens.First_Element.Loc.From);
-         else
+         elsif This.Tokens.First_Element.Kind = DocumentRef then
+            --  Must have the form "DocumentRef-*:AdditionRef-*"
             This.Tokens.Delete_First;
             if This.Tokens.Is_Empty then
+               --  Defensive (presence of colon is enforced by `Tokenize`)
                This.Error := DocumentRef_Missing_AdditionRef;
                This.Err_Loc := (From, This.Str'Last);
-            elsif This.Tokens.First_Element.Kind /= AdditionRef then
+            elsif This.Tokens.First_Element.Kind /= Colon then
+               --  Defensive (presence of colon is enforced by `Tokenize`)
                This.Error := DocumentRef_Missing_AdditionRef;
-               This.Err_Loc := (From, This.Tokens.First_Element.Loc.To);
+               This.Err_Loc := (From, This.Tokens.First_Element.Loc.From);
+            else
+               This.Tokens.Delete_First;
+               if This.Tokens.Is_Empty then
+                  This.Error := DocumentRef_Missing_AdditionRef;
+                  This.Err_Loc := (From, This.Str'Last);
+               elsif This.Tokens.First_Element.Kind /= AdditionRef then
+                  This.Error := DocumentRef_Missing_AdditionRef;
+                  This.Err_Loc := (From, This.Tokens.First_Element.Loc.To);
+               end if;
             end if;
+
+            This.Tokens.Delete_First;
+
+         elsif This.Tokens.First_Element.Kind = AdditionRef then
+            This.Tokens.Delete_First;
+
+         else
+            This.Error := Addition_Expression_Expected;
+            This.Err_Loc := This.Tokens.First_Element.Loc;
+            return;
          end if;
-
-         This.Tokens.Delete_First;
-
-      elsif This.Tokens.First_Element.Kind = AdditionRef then
-         This.Tokens.Delete_First;
-
-      else
-         This.Error := Addition_Expression_Expected;
-         This.Err_Loc := This.Tokens.First_Element.Loc;
-         return;
-      end if;
+      end;
    end Parse_Addition_Expression;
 
    -----------
@@ -372,7 +389,7 @@ package body SPDX is
             return "";
 
          when Or_Later_Misplaced =>
-            return "+ operator must follow and indentifier without " &
+            return "+ operator must follow an identifier without " &
               "whitespace (" & Img (This.Err_Loc) & ")";
 
          when Colon_Misplaced =>
@@ -389,7 +406,7 @@ package body SPDX is
             return "Unexpected token at (" & Img (This.Err_Loc) & ")";
 
          when Paren_Close_Expected =>
-            return "Missing closing parentheses ')' at (" &
+            return "Missing closing parenthesis ')' at (" &
               Img (This.Err_Loc) & ")";
 
          when License_Id_Expected =>
@@ -424,6 +441,11 @@ package body SPDX is
 
          when DocumentRef_Missing_Colon =>
             return "No ':' following DocumentRef: '" &
+              Token_Str (This, This.Err_Loc) &
+              "' (" & Img (This.Err_Loc) & ")";
+
+         when DocumentRef_Colon_Whitespace =>
+            return "Whitespace following ':': '" &
               Token_Str (This, This.Err_Loc) &
               "' (" & Img (This.Err_Loc) & ")";
 
@@ -534,10 +556,7 @@ package body SPDX is
                      This.Error := Operator_Mixed_Case;
                      This.Err_Loc := (From, To);
                      return;
-
-                  elsif Has_Prefix (Substr, DocRef_Prefix)
-                    and then Substr'Length > DocRef_Prefix'Length -- needs an id
-                  then
+                  elsif Has_Prefix (Substr, DocRef_Prefix) then
                      if Contains_Plus (Substr) then
                         This.Error := Or_Later_In_User_Def_Ref;
                         This.Err_Loc := (From, To);
@@ -551,13 +570,20 @@ package body SPDX is
                         return;
                      end if;
 
+                     --  : must be followed by identifier without whitespace
+                     if To + 2 in Str'Range
+                       and then Str (To + 2) in Whitespace_Characters
+                     then
+                        This.Error := DocumentRef_Colon_Whitespace;
+                        This.Err_Loc := (From, To + 2);
+                        return;
+                     end if;
+
                      Tokens.Append ((DocumentRef, (From, To)));
                      Tokens.Append ((Colon, (To + 1, To + 1)));
                      Index := Index + 1;
 
-                  elsif Has_Prefix (Substr, LicRef_Prefix)
-                    and then Substr'Length > LicRef_Prefix'Length
-                  then
+                  elsif Has_Prefix (Substr, LicRef_Prefix) then
                      if Contains_Plus (Substr) then
                         This.Error := Or_Later_In_User_Def_Ref;
                         This.Err_Loc := (From, To);
@@ -565,9 +591,7 @@ package body SPDX is
                      end if;
                      Tokens.Append ((LicenseRef, (From, To)));
 
-                  elsif Has_Prefix (Substr, AddRef_Prefix)
-                    and then Substr'Length > AddRef_Prefix'Length
-                  then
+                  elsif Has_Prefix (Substr, AddRef_Prefix) then
                      if Contains_Plus (Substr) then
                         This.Error := Or_Later_In_User_Def_Ref;
                         This.Err_Loc := (From, To);
@@ -577,7 +601,7 @@ package body SPDX is
 
                   else
                      if Str (To) = '+' then
-                        --  + operator can be found after and id (without
+                        --  + operator can be found after an id (without
                         --  whitespace).
                         Tokens.Append ((Id_Str, (From, To - 1)));
                         Tokens.Append ((Op_Or_Later, (To, To)));
