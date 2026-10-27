@@ -69,3 +69,6 @@ test:
       coverage_report:
         coverage_format: cobertura
         path: coverage/cobertura/cobertura.xml
+
+include:
+  - component: $CI_SERVER_FQDN/it/gitlab-templates/gitleaks@~latest
